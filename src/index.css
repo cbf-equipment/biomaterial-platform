@@ -1,0 +1,30 @@
+:root {
+  --ink: #1a1f1c;
+  --paper: #fbfaf6;
+  --bg: #e8e6df;
+  --line: #d9d6cc;
+  --muted: #6c6a63;
+  --accent: #c47a2c;
+  --t1: #2c5f4a;
+  --t1-bg: #edf3ef;
+  --t2: #2d4580;
+  --t2-bg: #eceef7;
+  --ai: #6b4e9e;
+  --ai-bg: #f1ecf7;
+  --sans: 'Noto Sans KR', 'Helvetica Neue', sans-serif;
+  --serif: 'Noto Serif KR', Georgia, serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.7;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { cursor: pointer; font-family: var(--sans); }
+input, select, textarea { font-family: var(--sans); }
