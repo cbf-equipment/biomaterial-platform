@@ -10,29 +10,39 @@ export default function App() {
   const [reportData, setReportData] = useState(null)
   const [error, setError] = useState('')
 
-  async function handleSearch(query) {
-    setStage('loading')
-    setError('')
-    try {
-      if (!GAS_URL) {
-        await new Promise(r => setTimeout(r, 2500))
-        setReportData(buildDemoData(query))
-        setStage('report')
-        return
-      }
-      const url = `${GAS_URL}?action=analyze&query=${encodeURIComponent(query.material)}&type=${encodeURIComponent(query.type)}`
-      const res = await fetch(url, { redirect: 'follow' })
-      if (!res.ok) throw new Error('서버 응답 오류')
-      const data = await res.json()
-      if (data.error) throw new Error(data.error)
-      setReportData(data)
-      setStage('report')
-    } catch (e) {
-      console.error('GAS 연결 오류:', e)
+async function handleSearch(query) {
+  setStage('loading')
+  setError('')
+  try {
+    if (!GAS_URL) {
+      await new Promise(r => setTimeout(r, 2500))
       setReportData(buildDemoData(query))
       setStage('report')
+      return
     }
+    const data = await new Promise((resolve, reject) => {
+      const callbackName = 'cbf_callback_' + Date.now()
+      const script = document.createElement('script')
+      const url = `${GAS_URL}?action=analyze&query=${encodeURIComponent(query.material)}&type=${encodeURIComponent(query.type)}&callback=${callbackName}`
+      script.src = url
+      window[callbackName] = (data) => {
+        delete window[callbackName]
+        document.body.removeChild(script)
+        resolve(data)
+      }
+      script.onerror = () => reject(new Error('GAS 연결 실패'))
+      document.body.appendChild(script)
+      setTimeout(() => reject(new Error('timeout')), 30000)
+    })
+    if (data.error) throw new Error(data.error)
+    setReportData(data)
+    setStage('report')
+  } catch (e) {
+    console.error('연결 오류:', e)
+    setReportData(buildDemoData(query))
+    setStage('report')
   }
+}
 
   function handleReset() {
     setStage('search')
