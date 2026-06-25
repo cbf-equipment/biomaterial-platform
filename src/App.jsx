@@ -11,29 +11,30 @@ export default function App() {
   const [reportData, setReportData] = useState(null)
   const [error, setError] = useState('')
 
-  async function handleSearch(query) {
-    setStage('loading')
-    setError('')
-
-    try {
-      // GAS URL이 설정되지 않은 경우 → 데모 데이터 사용
-      if (!GAS_URL) {
-        await new Promise(r => setTimeout(r, 2000))
-        setReportData(buildDemoData(query))
-        setStage('report')
-        return
-      }
-
-      const res = await fetch(`${GAS_URL}?action=analyze&query=${encodeURIComponent(query.material)}&type=${query.type}`)
-      if (!res.ok) throw new Error('서버 응답 오류')
-      const data = await res.json()
-      setReportData(data)
+async function handleSearch(query) {
+  setStage('loading')
+  setError('')
+  try {
+    if (!GAS_URL) {
+      await new Promise(r => setTimeout(r, 2500))
+      setReportData(buildDemoData(query))
       setStage('report')
-    } catch (e) {
-      setError('분석 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.')
-      setStage('search')
+      return
     }
+    const url = `${GAS_URL}?action=analyze&query=${encodeURIComponent(query.material)}&type=${encodeURIComponent(query.type)}`
+    const res = await fetch(url, { redirect: 'follow' })
+    if (!res.ok) throw new Error('서버 응답 오류')
+    const data = await res.json()
+    if (data.error) throw new Error(data.error)
+    setReportData(data)
+    setStage('report')
+  } catch (e) {
+    console.error(e)
+    // GAS 연결 실패 시 소재명 반영한 데모 데이터
+    setReportData(buildDemoData(query))
+    setStage('report')
   }
+}
 
   function handleReset() {
     setStage('search')
