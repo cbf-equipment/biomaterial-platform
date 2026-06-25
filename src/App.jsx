@@ -21,7 +21,7 @@ export default function App() {
         return
       }
       const data = await new Promise((resolve, reject) => {
-        const callbackName = 'cbf_cb_' + Date.now()
+        const callbackName = 'cbf_cb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)
         const script = document.createElement('script')
         const url = `${GAS_URL}?action=analyze&query=${encodeURIComponent(query.material)}&type=${encodeURIComponent(query.type)}&callback=${callbackName}`
         script.src = url
