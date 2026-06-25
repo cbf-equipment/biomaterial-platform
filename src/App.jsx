@@ -10,39 +10,43 @@ export default function App() {
   const [reportData, setReportData] = useState(null)
   const [error, setError] = useState('')
 
-async function handleSearch(query) {
-  setStage('loading')
-  setError('')
-  try {
-    if (!GAS_URL) {
-      await new Promise(r => setTimeout(r, 2500))
+  async function handleSearch(query) {
+    setStage('loading')
+    setError('')
+    try {
+      if (!GAS_URL) {
+        await new Promise(r => setTimeout(r, 2500))
+        setReportData(buildDemoData(query))
+        setStage('report')
+        return
+      }
+      const data = await new Promise((resolve, reject) => {
+        const callbackName = 'cbf_cb_' + Date.now()
+        const script = document.createElement('script')
+        const url = `${GAS_URL}?action=analyze&query=${encodeURIComponent(query.material)}&type=${encodeURIComponent(query.type)}&callback=${callbackName}`
+        script.src = url
+        window[callbackName] = (result) => {
+          delete window[callbackName]
+          document.body.removeChild(script)
+          resolve(result)
+        }
+        script.onerror = () => {
+          delete window[callbackName]
+          document.body.removeChild(script)
+          reject(new Error('GAS 연결 실패'))
+        }
+        document.body.appendChild(script)
+        setTimeout(() => reject(new Error('timeout')), 30000)
+      })
+      if (data.error) throw new Error(data.error)
+      setReportData(data)
+      setStage('report')
+    } catch (e) {
+      console.error('연결 오류:', e)
       setReportData(buildDemoData(query))
       setStage('report')
-      return
     }
-    const data = await new Promise((resolve, reject) => {
-      const callbackName = 'cbf_callback_' + Date.now()
-      const script = document.createElement('script')
-      const url = `${GAS_URL}?action=analyze&query=${encodeURIComponent(query.material)}&type=${encodeURIComponent(query.type)}&callback=${callbackName}`
-      script.src = url
-      window[callbackName] = (data) => {
-        delete window[callbackName]
-        document.body.removeChild(script)
-        resolve(data)
-      }
-      script.onerror = () => reject(new Error('GAS 연결 실패'))
-      document.body.appendChild(script)
-      setTimeout(() => reject(new Error('timeout')), 30000)
-    })
-    if (data.error) throw new Error(data.error)
-    setReportData(data)
-    setStage('report')
-  } catch (e) {
-    console.error('연결 오류:', e)
-    setReportData(buildDemoData(query))
-    setStage('report')
   }
-}
 
   function handleReset() {
     setStage('search')
@@ -67,7 +71,7 @@ function buildDemoData(query) {
     track1: {
       profiling: [
         { name: '지표성분 1', class: '-', amount: '-', rt: '-', ratio: '-' },
-        { name: '지표성분 2', class: '-', amount: '-', rt: '-', ratio: '-' },
+        { name: '지표성분 2', class: '-', amount: '-', rt: '-', ratio: '-' }
       ],
       profilingAI: [
         `${m} 성분 프로파일 — 진흥원 실측 데이터 입력 후 AI 해석이 제공됩니다.`,
@@ -89,15 +93,7 @@ function buildDemoData(query) {
     },
     track2: {
       papers: [
-        {
-          title: `${m} 관련 논문을 PubMed에서 검색합니다`,
-          authors: '-',
-          journal: '-',
-          year: '-',
-          pmid: '-',
-          summary: 'PubMed API는 별도 키 없이 연결 가능합니다. GAS 배포 후 실제 논문이 표시됩니다.',
-          level: 1
-        }
+        { title: `${m} 관련 논문을 PubMed에서 검색합니다`, authors: '-', journal: '-', year: '-', pmid: '-', summary: 'GAS 연결 완료 후 실제 논문이 표시됩니다.', level: 1 }
       ],
       papersAI: [
         `${m} 관련 PubMed 문헌 검색 결과가 여기에 표시됩니다.`,
@@ -105,14 +101,7 @@ function buildDemoData(query) {
         'Claude API 키 입력 후 AI 문헌 요약이 활성화됩니다.'
       ],
       patents: [
-        {
-          no: '-',
-          status: '조회 예정',
-          title: `${m} 관련 특허를 KIPRIS에서 검색합니다`,
-          applicant: '-',
-          year: '-',
-          tags: [m, '특허 조회 예정']
-        }
+        { no: '-', status: '조회 예정', title: `${m} 관련 특허를 KIPRIS에서 검색합니다`, applicant: '-', year: '-', tags: [m, '특허 조회 예정'] }
       ],
       patentsAI: [
         `${m} 특허 환경 분석은 KIPRIS API 연결 후 제공됩니다.`,
@@ -120,15 +109,7 @@ function buildDemoData(query) {
         '국내외 특허 선행조사 결과가 자동으로 정리됩니다.'
       ],
       products: [
-        {
-          name: `${m} 관련 제품`,
-          brand: '-',
-          origin: '-',
-          info: '네이버 쇼핑 API 연결 후 실제 시판 제품이 표시됩니다.',
-          price: '-',
-          source: '네이버 쇼핑 API 연결 필요',
-          match: 0
-        }
+        { name: `${m} 관련 제품`, brand: '-', origin: '-', info: '네이버 쇼핑 API 연결 후 실제 시판 제품이 표시됩니다.', price: '-', source: '네이버 쇼핑 API 연결 필요', match: 0 }
       ],
       productsAI: [
         `${m} 시판 제품 비교 분석은 네이버 쇼핑 API 연결 후 제공됩니다.`,
